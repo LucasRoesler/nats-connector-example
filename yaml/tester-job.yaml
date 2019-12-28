@@ -1,0 +1,22 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nats-connector-example
+  namespace: openfaas
+spec:
+  template:
+    spec:
+      containers:
+      - name: pi
+        image: theaxer/nats-connector-example:latest
+        env:
+          - name: nats_url
+            value: nats://nats.openfaas:4222
+          - name: faas_request_subject
+            value: faas-req
+          - name: faas_msg
+            value: "Hello world"
+          - name: msg_until
+            value: 1m
+      restartPolicy: Never
+  backoffLimit: 4
