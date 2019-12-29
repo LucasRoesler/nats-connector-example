@@ -1,15 +1,18 @@
 package function
 
 import (
+	"bytes"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	nats "github.com/nats-io/nats.go"
+	handler "github.com/openfaas-incubator/go-function-sdk"
 )
 
 // Handle a serverless request
-func Handle(req []byte) string {
+func Handle(req handler.Request) (handler.Response, error) {
 	subject := "faas-response"
 	val, ok := os.LookupEnv("target_subject")
 	if ok {
@@ -25,17 +28,29 @@ func Handle(req []byte) string {
 	log.Printf("Connecting to: %s", natsURL)
 	nc, err := nats.Connect(natsURL)
 	if err != nil {
-		log.Println(err)
-		return err.Error()
+		r := handler.Response{
+			Body:       []byte(fmt.Sprintf("can not connect to nats: %s", err)),
+			StatusCode: http.StatusInternalServerError,
+		}
+		return r, err
 	}
 	defer nc.Close()
 
-	log.Printf("Publishing \"%s\" to: %s", string(req), subject)
-	err = nc.Publish(subject, req)
+	msg := bytes.TrimSpace(req.Body)
+
+	log.Printf("Publishing \"%s\" to: %s", string(msg), subject)
+	err = nc.Publish(subject, msg)
 	if err != nil {
 		log.Println(err)
-		return err.Error()
+		r := handler.Response{
+			Body:       []byte(fmt.Sprintf("can not publish to nats: %s", err)),
+			StatusCode: http.StatusInternalServerError,
+		}
+		return r, err
 	}
 
-	return fmt.Sprintf("The msg: \"%s\" has been republished to \"%s\"", string(req), subject)
+	return handler.Response{
+		Body:       []byte(fmt.Sprintf("The msg: \"%s\" has been republished to \"%s\"", string(msg), subject)),
+		StatusCode: http.StatusOK,
+	}, nil
 }

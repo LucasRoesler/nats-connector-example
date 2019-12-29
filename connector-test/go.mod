@@ -1,4 +1,4 @@
-module github.com/LucasRoesler/nats-connector-example/republish
+module github.com/LucasRoesler/nats-connector-example/connector-test
 
 go 1.13
 

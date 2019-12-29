@@ -5,7 +5,7 @@ provider:
 
 functions:
   republish:
-    lang: go
+    lang: golang-http
     handler: ./republish
     image: theaxer/nats-republish:latest
     environment:
@@ -13,4 +13,14 @@ functions:
       nats_url: nats://nats.openfaas:4222
     annotations:
       topic: "faas-req"
+
+  connector-test:
+    lang: golang-http
+    handler: ./connector-test
+    image: theaxer/connector-test:latest
+    environment:
+      faas_request_subject: faas-req
+      target_subject: faas-resp
+      nats_url: nats://nats.openfaas:4222
+      faas_msg: "Hello world"
 
