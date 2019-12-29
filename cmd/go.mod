@@ -1,4 +1,4 @@
-module github.com/LucasRoesler/nats-connector-example/publisher
+module github.com/LucasRoesler/nats-connector-example/cmd
 
 go 1.13
 
