@@ -3,13 +3,18 @@ provider:
   name: openfaas
   gateway: http://127.0.0.1:8080
 
+configuration:
+  templates:
+    - name: golang-http
+      source: https://github.com/openfaas-incubator/golang-http-template
+
 functions:
   republish:
     lang: golang-http
     handler: ./republish
     image: theaxer/nats-republish:latest
     environment:
-      target_subject: faas-resp
+      target_subject: nats-test-response
       nats_url: nats://nats.openfaas:4222
     annotations:
       topic: "faas-req"
@@ -19,8 +24,8 @@ functions:
     handler: ./connector-test
     image: theaxer/connector-test:latest
     environment:
-      faas_request_subject: faas-req
-      target_subject: faas-resp
+      faas_request_subject: nats-test
+      target_subject: nats-test-response
       nats_url: nats://nats.openfaas:4222
       faas_msg: "Hello world"
 

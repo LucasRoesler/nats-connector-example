@@ -13,7 +13,7 @@ import (
 
 // Handle a serverless request
 func Handle(req handler.Request) (handler.Response, error) {
-	subject := "faas-response"
+	subject := "nats-test-response"
 	val, ok := os.LookupEnv("target_subject")
 	if ok {
 		subject = val
