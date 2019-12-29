@@ -1,0 +1,16 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://127.0.0.1:8080
+
+functions:
+  republish:
+    lang: go
+    handler: ./republish
+    image: theaxer/nats-republish:latest
+    environment:
+      target_subject: faas-resp
+      nats_url: nats://nats.openfaas:4222
+    annotations:
+      topic: "faas-req"
+

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -30,6 +31,12 @@ func main() {
 		subject = val
 	}
 
+	respSubject := "faas-resp"
+	val, ok = os.LookupEnv("faas_response_subject")
+	if ok {
+		respSubject = val
+	}
+
 	msg := "Hello World"
 	val, ok = os.LookupEnv("faas_msg")
 	if ok {
@@ -47,8 +54,7 @@ func main() {
 	if ok {
 		until, err = time.ParseDuration(val)
 		if err != nil {
-			log.Println(err)
-			return
+			log.Fatal(err)
 		}
 	}
 
@@ -56,19 +62,46 @@ func main() {
 
 	nc, err := nats.Connect(natsURL)
 	if err != nil {
-		log.Println(err)
-		return
+		log.Fatal(err)
 	}
 	defer nc.Close()
 
-	sendMessages(ctx, nc, subject, msg, until)
+	go sendMessages(ctx, nc, subject, msg, until)
 
-	log.Println("Finished.")
-
-	err = nc.Drain()
+	err = listen(ctx, nc, respSubject, until)
 	if err != nil {
-		log.Println(err)
+		log.Fatalf("listening error: %s", err)
 	}
+
+	log.Println("Success!")
+}
+
+func listen(ctx context.Context, nc *nats.Conn, subject string, until time.Duration) error {
+	var count int
+	expectedCount := int(until.Seconds())
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second+until)
+	defer cancel()
+
+	sub, err := nc.SubscribeSync(subject)
+	if err != nil {
+		return err
+	}
+	defer sub.Unsubscribe()
+
+	fmt.Printf("Listener started, expecting %d messages\n", expectedCount)
+	for count = 1; count <= expectedCount; count++ {
+		if ctx.Err() != nil {
+			return err
+		}
+		msg, err := sub.NextMsgWithContext(ctx)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Response %d of %d: \"%s\"\n", count, expectedCount, string(msg.Data))
+	}
+
+	return nil
 }
 
 func sendMessages(ctx context.Context, nc *nats.Conn, subject, msg string, until time.Duration) {
@@ -81,6 +114,7 @@ func sendMessages(ctx context.Context, nc *nats.Conn, subject, msg string, until
 	for {
 		select {
 		case <-ctx.Done():
+			log.Println("Finished.")
 			return
 		case <-t.C:
 			log.Printf("Sending \"%s\" to \"%s\"\n", msg, subject)

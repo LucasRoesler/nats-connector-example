@@ -5,9 +5,9 @@ This repo provides a very simple way to verify that an installation of  the [`na
 
 ## Running Locally
 
-1. Deploy a test function an annotate it with the nats topic you will publish messages to:
+1. Deploy the republish function:
    ```sh
-   faas-cli deploy --name pycho --image theaxer/pycho:latest --fprocess='python index.py'  --annotation topic="faas-req"
+   faas-cli deploy
    ```
 2. Install the `nats-connector`
    ```sh
@@ -19,13 +19,13 @@ This repo provides a very simple way to verify that an installation of  the [`na
    ```
 4. Run the tester
    ```sh
-   go run main.go
+   cd publisher && go run main.go
    ```
 
 ## Running in cluster
 1. Deploy a test function an annotate it with the nats topic you will publish messages to:
    ```sh
-   faas-cli deploy --name pycho --image theaxer/pycho:latest --fprocess='python index.py'  --annotation topic="faas-req"
+   faas-cli deploy
    ```
 2. Install the `nats-connector`
    ```sh
