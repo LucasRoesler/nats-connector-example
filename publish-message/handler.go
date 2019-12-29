@@ -11,21 +11,24 @@ import (
 	handler "github.com/openfaas-incubator/go-function-sdk"
 )
 
+var (
+	subject        = "nats-test"
+	defaultMessage = "Hello World"
+)
+
 // Handle a serverless request
 func Handle(req handler.Request) (handler.Response, error) {
-	subject := "nats-test-response"
-	val, ok := os.LookupEnv("target_subject")
-	if ok {
-		subject = val
+	msg := defaultMessage
+	if len(req.Body) > 0 {
+		msg = string(bytes.TrimSpace(req.Body))
 	}
 
 	natsURL := nats.DefaultURL
-	val, ok = os.LookupEnv("nats_url")
+	val, ok := os.LookupEnv("nats_url")
 	if ok {
 		natsURL = val
 	}
 
-	log.Printf("Connecting to: %s", natsURL)
 	nc, err := nats.Connect(natsURL)
 	if err != nil {
 		r := handler.Response{
@@ -36,10 +39,8 @@ func Handle(req handler.Request) (handler.Response, error) {
 	}
 	defer nc.Close()
 
-	msg := bytes.TrimSpace(req.Body)
-
-	log.Printf("Publishing \"%s\" to: %s", string(msg), subject)
-	err = nc.Publish(subject, msg)
+	log.Printf("Sending %q to %q\n", msg, subject)
+	err = nc.Publish(subject, []byte(msg))
 	if err != nil {
 		log.Println(err)
 		r := handler.Response{
@@ -50,7 +51,7 @@ func Handle(req handler.Request) (handler.Response, error) {
 	}
 
 	return handler.Response{
-		Body:       []byte(fmt.Sprintf("The msg: \"%s\" has been republished to \"%s\"", string(msg), subject)),
+		Body:       []byte(fmt.Sprintf("Sent %q", msg)),
 		StatusCode: http.StatusOK,
 	}, nil
 }

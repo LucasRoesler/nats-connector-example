@@ -9,23 +9,17 @@ configuration:
       source: https://github.com/openfaas-incubator/golang-http-template
 
 functions:
-  republish:
+  receive-message:
     lang: golang-http
-    handler: ./republish
-    image: theaxer/nats-republish:latest
-    environment:
-      target_subject: nats-test-response
-      nats_url: nats://nats.openfaas:4222
+    handler: ./receive-message
+    image: theaxer/receive-message:latest
     annotations:
-      topic: "faas-req"
+      topic: "nats-test"
 
-  connector-test:
+  publish-message:
     lang: golang-http
-    handler: ./connector-test
-    image: theaxer/connector-test:latest
+    handler: ./publish-message
+    image: theaxer/publish-message:latest
     environment:
-      faas_request_subject: nats-test
-      target_subject: nats-test-response
       nats_url: nats://nats.openfaas:4222
-      faas_msg: "Hello world"
 
